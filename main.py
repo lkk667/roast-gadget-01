@@ -12,6 +12,7 @@ trailing newline and no extra output, so the sealed gate sees exactly
 one line of 148 characters.
 """
 
+import os
 import pathlib
 
 ROAST = (
@@ -20,10 +21,18 @@ ROAST = (
     "hours and accomplish nothing."
 )
 
-DESTINATION = pathlib.Path("/output/entry.txt")
+# The sealed gate counts characters, not bytes: keep the line inside
+# the 1-to-200 range, and refuse to write anything that would fail it.
+MAX_CHARS = 200
+
+# The grader runs this with /output mounted; the override exists only
+# so the same program can be smoke-tested on a machine without it.
+DESTINATION = pathlib.Path(os.environ.get("ROAST_OUTPUT", "/output/entry.txt"))
 
 
 def write_entry() -> pathlib.Path:
+    if not 1 <= len(ROAST) <= MAX_CHARS:
+        raise ValueError(f"roast is {len(ROAST)} characters, outside 1-{MAX_CHARS}")
     DESTINATION.parent.mkdir(parents=True, exist_ok=True)
     DESTINATION.write_text(ROAST, encoding="utf-8")
     return DESTINATION
